@@ -1,10 +1,9 @@
 # HypAware
 
-HypAware is the improvement loop for your agents, from coding agents to
-autonomous ones. It records every session from your AI clients (Claude Code,
-Codex, Cursor, OpenCode, and more) into one queryable history on your
-machine. Then it helps you find what went wrong, what keeps repeating, and
-what to fix.
+HypAware is the improvement loop for all your agents. It records every
+session from your AI clients (Claude Code, Codex, Cursor, OpenCode, and
+more) into one queryable history on your machine. Then it helps you find
+what went wrong, what keeps repeating, and what to fix.
 
 - **Collect.** A lightweight background daemon captures sessions from the
   clients you already use. No changes to how you work.

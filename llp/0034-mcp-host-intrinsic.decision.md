@@ -203,7 +203,7 @@ client sees is decided by per-tool auth class, not by the migration order above.
 > Extended-by (Draft, proposed 2026-10-13): [LLP 0494#write-class](./0494-hypaware-mcp-phase-1.design.md#write-class)
 > proposes a third class, `write`, admitted by a named credential scope, for
 > one recommendation status write on the remote surface (option A of
-> hypaware-server LLP 0591#mark). Removed if Phil declines or option A is not
+> hypaware-server LLP 0596#mark). Removed if Phil declines or option A is not
 > chosen.
 
 <a id="stdio-stdout-discipline"></a>**stdio constraint:** stdout is the JSON-RPC

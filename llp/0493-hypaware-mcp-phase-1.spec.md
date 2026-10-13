@@ -6,39 +6,49 @@
 **Author:** HypForge designer
 **Date:** 2026-10-13
 **Source:** [HYP-128 "HypAware MCP: close the agent access gap"](https://linear.app/hyperparam/issue/HYP-128/hypaware-mcp-close-the-agent-access-gap),
-Phase 1, description at revision 2026-10-13T18:49:06.490Z; client sub-issues
-HYP-130 and HYP-132 to HYP-139
+Phase 1, description at revision 2026-10-13T20:15:30.957Z; client sub-issues
+HYP-130 and HYP-132 to HYP-139 (HYP-130 at 2026-10-13T20:15:10.417Z, HYP-133
+at 20:15:32.122Z, HYP-135 at 20:15:26.536Z, HYP-138 at 20:15:24.334Z, the
+rest unchanged since 2026-10-11), and the client share of HYP-141 (revision
+2026-10-13T20:15:33.449Z); Hernan's direction change of
+2026-10-13T20:21:14Z (Slack, relayed by the mayor) and his scope answer of
+2026-10-13T20:50Z (relayed by the orchestrator)
 **Related:** LLP 0494 (design), LLP 0034 (MCP hosting), LLP 0298 (the CI
 mint), LLP 0107 (skills ride attach), LLP 0197 (skills state constraints),
-LLP 0491 (team history guidance); hypaware-server LLP 0595 to 0598 (the
+LLP 0491 (team history guidance); hypaware-server LLP 0595 to 0599 (the
 server half, out of tree); hypscope LLP 0104 (the cloud-agent recipe, out of
 tree)
 
-> Draft 2026-10-13. Decision owner: Hernan Alvarez, through the mayor.
-> Phase 1 is approved; Phases 2 and 3 are held until a recorded sync with
-> Hernan. HYP-140 (the hypaware.ai pages) is held until Phil grants the
-> hyparam/hypaware.ai route. HYP-135 is designed without HYP-75, which is
-> not in this mission. This document covers the client half of Phase 1. The
-> parent issue text and the two server sub-issues (HYP-129, HYP-131) are
-> quoted in hypaware-server LLP 0595#request.
+> Draft 2026-10-13, design revision 3 (Hernan's direction change: the loop
+> runs with no human in it). Decision owner: Hernan Alvarez, through the
+> mayor. Phase 1 is approved, and HYP-141 (tool annotations) is admitted
+> into it by Hernan's instruction; the rest of Phase 2 and Phase 3 are held
+> until a recorded sync with Hernan. HYP-140 (the hypaware.ai pages) is held
+> until Phil grants the hyparam/hypaware.ai route. HYP-135 is designed
+> without HYP-75, which is not in this mission. This document covers the
+> client half of Phase 1. The parent issue text and the server sub-issues
+> (HYP-129, HYP-131, HYP-141) are quoted in hypaware-server LLP
+> 0595#request.
 
 ## Request {#request}
 
 Each sub-issue body below is quoted from Linear in full, at the revision
-above. The quotes are reflowed to fit; the words are Linear's.
+above, read through the Linear tool. The quotes are reflowed to fit; the
+words are Linear's.
 
-**HYP-130, "MCP 1.2: `hyp remote mint --scope query` and read token in the
+**HYP-130, "MCP 1.2: `hyp remote mint --scope query` and agent token in the
 cloud-agent recipe":**
 
 > Phase 1, hypaware client and HypScope.
 >
-> Expose the personal read token (MCP 1.1) from the CLI as
-> `hyp remote mint --scope query`, and include it in the HypScope "Connect a
-> cloud agent" setup recipe from HYP-116, so a cloud agent can read team
-> history and recommendations, not only be recorded.
+> Expose the agent token (MCP 1.1, read plus recommendation status) from
+> the CLI as `hyp remote mint --scope query`, and include it in the
+> HypScope "Connect a cloud agent" setup recipe from HYP-116, so a cloud
+> agent can read team history, act on recommendations and mark them
+> applied, not only be recorded.
 >
-> Done when: the CLI mints a read token, and the HYP-116 recipe places it in
-> the environment's secret store alongside the enrollment token.
+> Done when: the CLI mints an agent token, and the HYP-116 recipe places it
+> in the environment's secret store alongside the enrollment token.
 
 **HYP-132, "MCP 1.4: MCP server instructions block":**
 
@@ -60,7 +70,9 @@ cloud-agent recipe":**
 > Add MCP prompts that appear as commands in the agent (slash commands in
 > Claude Code), each the counterpart of a CLI command:
 >
-> * fix a recommendation by id (`hyp report fix`)
+> * fix a recommendation by id and mark it applied when done
+>   (`hyp report fix`), runnable by an unattended agent with no human
+>   approval step
 > * list open recommendations for this repo (`hyp report list`)
 > * check team history before starting a task (`hyp ask`)
 >
@@ -96,7 +108,7 @@ Droid":**
 > instructions in each vendor's format (Devin knowledge, Droid skill) so the
 > agent knows when to read team history and act on recommendations.
 >
-> Done when: the HYP-75 pilot recipes include the instructions and the read
+> Done when: the HYP-75 pilot recipes include the instructions and the agent
 > token.
 
 **HYP-136, "MCP 1.8: Docs agent prompts work through the MCP, plus a prompt
@@ -126,7 +138,7 @@ instruction":**
 >
 > Done when: no read or act instruction in the docs is CLI-only.
 
-**HYP-138, "MCP 1.10: New page /docs/mcp":**
+**HYP-138, "MCP 1.10: New page /docs/mcp (connect the MCP)":**
 
 > Phase 1 docs. New file hypaware/docs/MCP.md, published at /docs/mcp by
 > the site's build-docs.mjs. Copy agent.
@@ -135,9 +147,9 @@ instruction":**
 >
 > * copy-paste config for Claude Code, Cursor, VS Code, Claude Desktop,
 >   Codex and Devin
-> * stdio (`hyp mcp serve`) and remote (Cloud /v1/mcp with a bearer read
+> * stdio (`hyp mcp serve`) and remote (Cloud /v1/mcp with a bearer agent
 >   token) options
-> * how to get a read token (`hyp remote mint --scope query`)
+> * how to get an agent token (`hyp remote mint --scope query`)
 > * replaces the four MCP setup lines in Querying
 >
 > Build requirements: add a docs/README.md table row and an `llms.txt`
@@ -157,17 +169,81 @@ definitions":**
 >
 > Done when: /docs/mcp-reference is live and regenerates on each docs build.
 
+**HYP-141, "MCP 2.1: Tool annotations on every MCP tool"** (client share;
+the full text is quoted in hypaware-server LLP 0595#request):
+
+> Phase 2, hypaware-server MCP tools (and the client tools the server
+> reuses).
+>
+> Anthropic's directory requires every tool to have a `title` plus
+> `readOnlyHint` or `destructiveHint`. The portal flags missing
+> annotations. set_recommendation_status is the only write and gets
+> destructiveHint false with a clear title, so clients and directories
+> treat it as an intended, non-destructive write that unattended agents can
+> call.
+>
+> Done when: every tool on /v1/mcp and stdio carries a title and the right
+> hint.
+
+Hernan's direction for the client items, verbatim from his answer of
+20:21Z (the full text is the mission's `HERNAN-ANSWERS-20261013.md`):
+
+> 4. HYP-132 Instructions block (client src/core/mcp/server.js, reused by
+>    the server)
+>    initialize returns instructions: when to use the HypAware tools,
+>    summary-first rule, and that marking applied is expected at the end of
+>    a fix.
+>
+> 5. HYP-133 Agent commands as MCP prompts (same file; add prompts/list and
+>    prompts/get)
+>    - fix a recommendation by id and mark it applied when done
+>      (counterpart of `hyp report fix`); must work for an unattended agent
+>      with no human approval step
+>    - list open recommendations for this repo (`hyp report list`)
+>    - check team history before starting a task (`hyp ask`)
+>    Done: commands appear in Claude Code and Cursor over stdio and
+>    /v1/mcp.
+>
+> 6. HYP-134 Ship existing skills to Pi, OpenCode, Cursor, OpenClaw
+>    Add those clients to each skill's client list in the claude and codex
+>    plugin manifests (skill_dir already declared for each). Check content
+>    works per client.
+>
+> 7. HYP-141 Tool annotations
+>    Every MCP tool gets a title plus readOnlyHint or destructiveHint.
+>    set_recommendation_status: write, destructiveHint false.
+>
+> CONSTRAINTS
+> - No capture over MCP. Collection stays with the CLI and daemon.
+> - The agent token never grants config changes or ingest.
+
 ## What this request reaches that it does not own {#reach}
 
 - **The server.** HYP-132 and HYP-133 change `src/core/mcp/server.js`,
   which hypaware-server loads for `/v1/mcp`. A client merge reaches
   production on the next server deploy. The recommendation tools those
-  prompts name are hypaware-server LLP 0596; the token `--scope query` mints
-  is hypaware-server LLP 0597.
+  prompts name are hypaware-server LLP 0596; the agent token
+  `--scope query` mints is hypaware-server LLP 0597.
+- **The token's reach.** Hernan answered the scope question at 20:50Z:
+  the agent token keeps the literal `read report-publish`, with no
+  restriction for now. So a token any member can mint can also publish
+  reports and delete the org's reports over REST, for up to 90 days;
+  whether delete stays included is pending his word (hypaware-server
+  LLP 0596#scope, #scope-delete). The client does not narrow it. It says so
+  in plain words where the token is minted and documented
+  (LLP 0494#cli-mint, #docs-mcp).
 - **The mark.** HYP-133's "fix a recommendation" ends in a status mark. On
-  `/v1/mcp` that mark depends on Hernan's choice in hypaware-server
-  LLP 0596#mark. The client's share of the recommended option is the `write`
-  auth class (LLP 0494#write-class).
+  `/v1/mcp` the mark is the one admitted write (hypaware-server LLP 0598),
+  no longer conditional. The client's share is the `write` auth class
+  (LLP 0494#write-class).
+- **The recurrence.** The next pass checking "whether they stayed fixed"
+  is the server's reopen on recurrence (hypaware-server LLP 0599). The
+  client's share is the instructions line that tells an agent what to do
+  with a recommendation that recurs (LLP 0494#instructions).
+- **The annotations.** HYP-141 covers both surfaces. The client's tools
+  and the kernel's `tools/list` entry are this repository's
+  (LLP 0494#annotations); the server's own tools are hypaware-server
+  LLP 0596#annotations.
 - **The site.** HYP-138 and HYP-139 need a hypaware.ai `llms.txt` line and a
   site build change. Those are HYP-140's, which is held.
 - **HYP-75.** HYP-135's Done-when names its pilot recipes. HYP-75 is not in
@@ -175,9 +251,10 @@ definitions":**
 
 ## Out of scope {#out-of-scope}
 
-- Phases 2 and 3, HYP-140 and HYP-75. They appear only as seams in
-  LLP 0494#seams.
+- Phase 2 apart from HYP-141, Phase 3, HYP-140, HYP-142 and HYP-75. They
+  appear only as seams in LLP 0494#seams.
 - Recommendation tools served by the local stdio host. The recommendations
   live on the server; a local agent with `hyp` reaches them through the CLI
   or the remote proxy.
-- Tool annotations and registry metadata (Phase 2).
+- Registry metadata and publishing where agents look (Phase 2).
+- Any write on the client's local stdio host. The mark lives on the server.

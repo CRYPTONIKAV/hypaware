@@ -13,7 +13,9 @@ no systemd or launchd, so `hyp daemon install` cannot work there. Instead:
   exits on its own while a daemon is alive. A VM rebuilt after idling keeps
   the old daemon's pid file but restarts pid numbering, so the hook first
   removes that file unless its pid is still a hyp daemon; otherwise an
-  unrelated process holding the old pid would block the start.
+  unrelated process holding the old pid would block the start. The daemon
+  exits 75 to ask for a relaunch (new central config, a self-update), so the
+  hook runs it in a loop that relaunches on 75 and stops on any other exit.
 
 Both capture lanes work in a real cloud session: live OTEL telemetry
 (`claude_telemetry_events`) and the transcript sweep (`ai_gateway_messages`,
@@ -33,11 +35,15 @@ The CLI cannot create one; `/remote-env` only picks which existing one
      default package-manager list kept.
 3. **Environment variables** (central only):
    ```
-   HYP_CENTRAL_URL=https://central.example.com
+   HYP_CENTRAL_URL=https://api.hypaware.ai
    HYP_JOIN_TOKEN=<token>
    ```
-   Anyone who can use the environment can read these, so use a token you can
-   revoke on its own.
+   `HYP_CENTRAL_URL` is the server's base URL (a self-hosted server's own
+   base URL, never a `/v1/mcp` URL). Mint the token on your own machine,
+   signed in with `hyp remote login`, with
+   `hyp remote mint --label claude-cloud`; it prints once. Anyone who can use
+   the environment can read these values, so give cloud sessions their own
+   token. See [CI and headless deployment](../../docs/TEAM_SETUP.md#ci-and-headless-deployment).
 4. **Setup script:** paste the contents of `setup.sh`.
 5. Start a session in the environment. The first start runs the setup script;
    later starts reuse the cached result.

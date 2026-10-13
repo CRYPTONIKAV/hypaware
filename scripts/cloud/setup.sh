@@ -51,7 +51,10 @@ if [ -n "$pid" ] && ! { tr '\0' ' ' < "/proc/$pid/cmdline"; } 2>/dev/null | grep
   echo "$(date -u +%FT%TZ) removed stale pid file (pid $pid)" >>"$LOG"
 fi
 echo "$(date -u +%FT%TZ) session start" >>"$LOG"
-nohup setsid hyp daemon run >>"$LOG" 2>&1 </dev/null &
+# Exit 75 is the daemon asking to be relaunched (new central config, a
+# config change, a self-update); any other exit ends the loop.
+nohup setsid bash -c 'rc=75; while [ "$rc" -eq 75 ]; do hyp daemon run; rc=$?; done' \
+  >>"$LOG" 2>&1 </dev/null &
 exit 0
 EOF
 chmod +x "$START"

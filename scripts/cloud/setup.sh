@@ -1,0 +1,73 @@
+#!/bin/bash
+# HypAware capture for Claude Code cloud sessions.
+#
+# Paste into the cloud environment's "Setup script" field. It runs as root
+# before Claude Code starts, and the result is snapshotted, so it runs once
+# per environment cache (about weekly), not once per session.
+#
+# Optional environment variables (set them on the environment):
+#   HYP_CENTRAL_URL  central server to join; omit for local-only capture
+#   HYP_JOIN_TOKEN   join token for HYP_CENTRAL_URL
+#
+# A setup script that exits non-zero stops the session from starting, so
+# every failure here logs and exits 0: capture is lost, the session is not.
+set -u
+HYP_VERSION=1.41.0
+
+log() { echo "hypaware-cloud: $*"; }
+
+npm install -g --no-audit --no-fund "hypaware@${HYP_VERSION}" \
+  || { log "npm install failed; capture disabled"; exit 0; }
+
+# Local config with Claude attached: writes the OTEL env and HypAware's
+# session-context hooks into ~/.claude/settings.json. No daemon install:
+# the VM has no running systemd, so the daemon is started per session below.
+hyp setup --client claude --export keep-local --no-daemon --no-backfill \
+  || { log "hyp setup failed; capture disabled"; exit 0; }
+
+if [ -n "${HYP_CENTRAL_URL:-}" ] && [ -n "${HYP_JOIN_TOKEN:-}" ]; then
+  printf %s "$HYP_JOIN_TOKEN" | hyp join "$HYP_CENTRAL_URL" --no-daemon \
+    || log "hyp join failed; capturing locally only"
+fi
+
+# Processes do not survive the snapshot, so a SessionStart hook starts the
+# daemon in every session (including resumed ones). `hyp daemon run` exits
+# on its own when one is already running. Silent on purpose: SessionStart
+# stdout is added to Claude's context.
+START="$HOME/.hyp/cloud-session-start.sh"
+mkdir -p "$HOME/.hyp"
+cat > "$START" <<'EOF'
+#!/bin/bash
+[ "${CLAUDE_CODE_REMOTE:-}" = "true" ] || exit 0
+LOG="$HOME/.hyp/cloud-daemon.log"
+PIDFILE="$HOME/.hyp/hypaware/run/hypaware.pid"
+# A rebuilt VM keeps the previous daemon's pid file but restarts pid
+# numbering, so the old pid can now belong to an unrelated process and
+# `hyp daemon run` would refuse to start. Keep the file only while its pid
+# is a hyp daemon.
+pid=$(sed -n 's/^ *"pid": *\([0-9]*\).*/\1/p' "$PIDFILE" 2>/dev/null)
+if [ -n "$pid" ] && ! { tr '\0' ' ' < "/proc/$pid/cmdline"; } 2>/dev/null | grep -q 'daemon run'; then
+  rm -f "$PIDFILE"
+  echo "$(date -u +%FT%TZ) removed stale pid file (pid $pid)" >>"$LOG"
+fi
+echo "$(date -u +%FT%TZ) session start" >>"$LOG"
+nohup setsid hyp daemon run >>"$LOG" 2>&1 </dev/null &
+exit 0
+EOF
+chmod +x "$START"
+
+# Register it next to the hooks attach wrote, once.
+START="$START" node -e '
+const fs = require("fs")
+const file = process.env.HOME + "/.claude/settings.json"
+const s = JSON.parse(fs.readFileSync(file, "utf8"))
+const list = ((s.hooks ??= {}).SessionStart ??= [])
+const cmd = process.env.START
+if (!JSON.stringify(list).includes(cmd)) {
+  list.unshift({ hooks: [{ type: "command", command: cmd }] })
+  fs.writeFileSync(file, JSON.stringify(s, null, 2) + "\n")
+}
+' || log "could not register the SessionStart hook"
+
+log "ready (hypaware ${HYP_VERSION})"
+exit 0

@@ -84,6 +84,20 @@ Under option A the kernel also gains a `write` auth class (#write-class).
 - stderr carries one line with the expiry and the `jti`, plus a reminder
   that the token reads the org's recorded history and is revoked with
   `hyp remote tokens revoke <jti>`.
+- **Nothing is stored client-side.** The CLI does not write the token to
+  `HYP_HOME`, the keychain or any config. Its only copy goes to stdout, and
+  from there to the environment's secret store. The CLI keeps no record
+  of the jti either; `hyp remote tokens` asks the server.
+
+### Who needs it
+
+The token is for **headless** environments: a cloud agent, a CI job, any
+client with no `hyp` session on its machine. A member at their own
+computer does not need one. `hyp mcp serve --remote` (LLP 0034#proxy-fallback)
+already reaches `/v1/mcp` with their session's access JWT, refreshed by
+`resolveAccessJwt`. That session dies with the laptop's login. The read token
+outlives it, and that is the only thing it adds. The stderr reminder and
+`docs/MCP.md` both say so, so laptop users are not sent to mint one.
 
 ### Refusals
 
@@ -214,6 +228,14 @@ oddly:
    with `hyp report mark` or the dashboard.
 6. Bounded reads: prefer `LIMIT`, at most two concurrent heavy reads, and
    treat capped results as incomplete (LLP 0491#guidance).
+7. **Recommendations are suggestions.** Before acting on one, check it
+   against the current code. When running without a person watching, do
+   not mark one `applied` unless the change is made and checked. Every
+   mark gives a reason or a link. This is the stated mitigation for the
+   strategy's risk that bad recommendations land faster in unattended
+   runs. Like rule 3, it is advice to a well-behaved agent and not a
+   boundary. The boundary is that a read-token agent cannot mark at all
+   (hypaware-server LLP 0591#mark, option A).
 
 The skills say the same things at more length. The instructions are for
 clients that have no skill (HYP-132's reason).
